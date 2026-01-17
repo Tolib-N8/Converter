@@ -1,0 +1,30 @@
+workflows:
+  ios-unsigned:
+    name: iOS Build (Unsigned)
+    max_build_duration: 60
+    instance_type: mac_mini_m1
+    environment:
+      flutter: stable
+      xcode: latest
+      cocoapods: default
+    scripts:
+      - name: Get dependencies
+        script: |
+          flutter pub get
+          find . -name "Podfile" -exec dir {} \;
+      - name: Install Pods
+        script: |
+          cd ios
+          pod install
+      - name: Build IPA (No Code Signing)
+        script: |
+          # Собираем .app без подписи
+          flutter build ios --release --no-codesign
+          
+          # Вручную упаковываем .app в .ipa (трюк для создания файла)
+          cd build/ios/iphoneos
+          mkdir Payload
+          mv Runner.app Payload/
+          zip -r Runner.ipa Payload
+    artifacts:
+      - build/ios/iphoneos/Runner.ipa
